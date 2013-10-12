@@ -29,6 +29,10 @@ allEngines = [
 from math import log
 from collections import namedtuple, OrderedDict
 
+MAX_HEIGHT = 7
+MAX_STAGES = 7
+MIN_ACCEL = 5.0 + 1e-6
+
 # sizes
 SMALL = 'Small'
 LARGE = 'Large'
@@ -108,20 +112,6 @@ class Stage(Stage):
                                 f, e, False,
                                 num_side_parts, num_side_parts, height)
 
-    def can_mount_on(self, other):
-        if self.central:
-            return True
-        else:
-            return other.num_side_parts == 0
-
-    def decoupler_weight(self, mounted_on_large):
-        if self.central:
-            if mounted_on_large and self.fuel.size == LARGE:
-                return 0.4
-            return 0.05
-        else:
-            return 0.025 * self.num_side_parts
-
     def num_tanks(self):
         return self.height * (self.num_side_parts + int(self.central))
 
@@ -133,54 +123,79 @@ class Stage(Stage):
             self.num_engines * self.engine.mass +
             self.fuel.m_full * self.num_tanks())
 
-    def gisp(self, atmosphere=False):
+    def gisp(self, atmosphere):
         if atmosphere:
-            return self.engine.isp_atm# * 9.816
+            return self.engine.isp_atm * 9.816
         else:
-            return self.engine.isp_vac# * 9.816
+            return self.engine.isp_vac * 9.816
+
+
+class MountFailure(Exception):
+    pass
+
+
+AbstractRocket = namedtuple(
+    'AbstractRocket',
+    'num_stages height can_mount_sides need_large_decoupler dv mass')
+class AbstractRocket(AbstractRocket):
+    @staticmethod
+    def make_payload(payload):
+        return AbstractRocket(0, 0, False, None, 0, payload)
+
+    def try_mount(self, stage, atmosphere=False):
+        # return tuple (new_abstract_rocket, stage_accel) or raise MountFailure
+
+        num_stages, height, can_mount_sides, need_large_decoupler, dv, mass =\
+            self
+
+        num_stages += 1
+        if num_stages > MAX_STAGES:
+            raise MountFailure('too many stages')
+
+        if stage.central:
+            height += stage.height
+            if height > MAX_HEIGHT:
+                raise MountFailure('rocket is too high')
+            if self.num_stages > 0:
+                if stage.fuel.size == LARGE and need_large_decoupler:
+                    mass += 0.4
+                else:
+                    mass += 0.05
+            need_large_decoupler = stage.engine.size == LARGE
+            can_mount_sides = stage.num_side_parts == 0
+        else:
+            if not can_mount_sides:
+                raise MountFailure("can't mount sides")
+            mass += 0.025 * stage.num_side_parts
+            can_mount_sides = False
+
+        mass += stage.m_start()
+        accel = stage.engine.thrust * stage.num_engines / mass
+        if accel < MIN_ACCEL:
+            raise MountFailure('acceleration is too low')
+
+        m_end = mass - stage.m_fuel()
+        dv += log(mass / m_end) * stage.gisp(atmosphere)
+
+        new_abstract_rocket = AbstractRocket(
+            num_stages, height, can_mount_sides, need_large_decoupler, dv, mass)
+
+        return new_abstract_rocket, accel
 
 
 Dyn = namedtuple('Dyn', 'dv accel')
 
 
-def total_mass(stages):
-    m = 0
-    on_large = None
-
-    for i, stage in enumerate(stages):
-        if i != 0:
-            m += stage.decoupler_weight(on_large)
-        m += stage.m_start()
-
-        if stage.central:
-            on_large = stage.engine.size == LARGE
-
-    return m
-
-
 def simulate(payload, stages):
-    m_start = payload
-    on_large = None
+    ar = AbstractRocket.make_payload(payload)
+    prev_dv = ar.dv
 
     dyns = []
-
     for i, stage in enumerate(stages):
-        if i != 0:
-            m_start += stage.decoupler_weight(on_large)
-        m_start += stage.m_start()
-        m_end = m_start - stage.m_fuel()
-
-        #print 'ms', m_start, m_end
-        dv = log(m_start/m_end) * stage.gisp(atmosphere=(i == len(stages)-1)) * 9.816
-        #print dv
-        accel = stage.engine.thrust * stage.num_engines / m_start
-        dyns.append(Dyn(dv, accel))
-
-        if stage.central:
-            on_large = stage.engine.size == LARGE
-        first = False
-
-    return dyns
+        ar, accel = ar.try_mount(stage, atmosphere=(i == len(stages) - 1))
+        dyns.append(Dyn(ar.dv - prev_dv, accel))
+        prev_dv = ar.dv
+    return ar, dyns
 
 
 def check_takeoff_condition(dyns):
@@ -192,24 +207,4 @@ def check_takeoff_condition(dyns):
         dv += dyn.dv
         if dv >= takeoff_dv + 1e-3:
             break
-    return True
-
-
-def check_accel_condition(dyns):
-    return all(dyn.accel >= 5 + 1e-3 for dyn in dyns)
-
-
-def check_rocket(stages):
-    if len(stages) > 7:
-        return False
-    height = 0
-    for i, stage in enumerate(stages):
-        if stage.central:
-            height += stage.height
-            if height > 7:
-                return False
-        if i == 0 and not stage.central:
-            return False
-        if i > 0 and not stage.can_mount_on(stages[i-1]):
-            return False
     return True

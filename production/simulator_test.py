@@ -13,13 +13,12 @@ def run_rocket_tests():
     for test in tests:
         stages = map(Stage.from_json, test['rocket'])
         payload = test['payload']
-        dyns = simulate(payload, stages)
+        ar, dyns = simulate(payload, stages)
         print dyns
         test['resulting_dyns'] = map(repr, dyns)
 
         expected_dv = test['expected_total_dv']
-        dv = sum(d.dv for d in dyns)
-        assert_almost_equal(dv, expected_dv, delta=1e-3)
+        assert_almost_equal(ar.dv, expected_dv, delta=1e-3)
 
 
     with open('../data/rocket_tests.json', 'w') as fout:
