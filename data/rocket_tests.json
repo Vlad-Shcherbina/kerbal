@@ -73,7 +73,7 @@
         "rocket": [
             {
                 "fuel": "FL-T100 Fuel Tank", 
-                "engine": "LV-T45 Liquid Fuel Engine", 
+                "engine": "LV-T30 Liquid Fuel Engine", 
                 "central": true, 
                 "numSideParts": 2, 
                 "numEngines": 1, 
@@ -81,7 +81,7 @@
             }, 
             {
                 "fuel": "Rockomax X200-16 Fuel Tank", 
-                "engine": "LV-T45 Liquid Fuel Engine", 
+                "engine": "LV-T30 Liquid Fuel Engine", 
                 "central": true, 
                 "numSideParts": 6, 
                 "numEngines": 7, 
@@ -97,11 +97,11 @@
             }
         ], 
         "payload": 10.4, 
-        "expected_total_dv": 7011.159657661359, 
+        "expected_total_dv": 7189.773352977607, 
         "resulting_dyns": [
-            "Dyn(dv=1119.6515295476581, accel=11.790714812085485)", 
-            "Dyn(dv=3501.7751786750387, accel=15.467476867835934)", 
-            "Dyn(dv=2389.732618109185, accel=18.150879183210435)"
+            "Dyn(dv=1139.3221360608663, accel=12.864622288706059)", 
+            "Dyn(dv=3637.4374465334035, accel=17.003248128795367)", 
+            "Dyn(dv=2413.013430613033, accel=18.26136579798364)"
         ]
     }, 
     {
@@ -115,7 +115,7 @@
                 "height": 1
             }, 
             {
-                "fuel": "Rockomax X200-8 Fuel Tank", 
+                "fuel": "FL-T800 Fuel Tank", 
                 "engine": "Rockomax \"Mainsail\" Liquid Engine", 
                 "central": true, 
                 "numSideParts": 3, 

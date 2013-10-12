@@ -44,7 +44,7 @@ ALL_FUELS = [
     Fuel("FL-T200 Fuel Tank", 1.125, 0.125, SMALL),
     Fuel("FL-T400 Fuel Tank", 2.25, 0.25, SMALL),
     Fuel("FL-T800 Fuel Tank", 4.5, 0.5, SMALL),
-    Fuel("Rockomax X200-8 Fuel Tank", 4.5, 0.5, LARGE),
+    #Fuel("Rockomax X200-8 Fuel Tank", 4.5, 0.5, LARGE),
     Fuel("Rockomax X200-16 Fuel Tank", 9, 1, LARGE),
     Fuel("Rockomax X200-32 Fuel Tank", 18, 2, LARGE),
     Fuel("Rockomax Jumbo-64 Fuel Tank", 36, 4, LARGE),
@@ -54,7 +54,7 @@ Engine = namedtuple('Engine', 'name size mass thrust isp_atm isp_vac')
 
 ALL_ENGINES = [
     Engine("LV-T30 Liquid Fuel Engine", SMALL, 1.25, 215, 320, 370),
-    Engine("LV-T45 Liquid Fuel Engine", SMALL, 1.5,  200, 320, 370),
+    #Engine("LV-T45 Liquid Fuel Engine", SMALL, 1.5,  200, 320, 370),
     Engine("LV-909 Liquid Fuel Engine", SMALL, 0.5,  50,  300, 390),
     Engine("Toroidal Aerospike Rocket", SMALL, 1.5,  175, 388, 390),
     Engine("Rockomax \"Poodle\" Liquid Engine", LARGE, 2.5, 220,  270, 390),
@@ -95,11 +95,18 @@ class Stage(Stage):
 
     @staticmethod
     def all():
-        toroidal = ALL_ENGINES[3]
+        toroidal = ALL_ENGINES[2]
         assert toroidal.name.startswith('Toroidal')
+
+        cant_be_doubled = [ALL_FUELS[3], ALL_FUELS[6]]
+        assert cant_be_doubled[0].name.startswith('FL-T800')
+        assert cant_be_doubled[1].name.startswith('Rockomax Jumbo-64')
+
         for f in ALL_FUELS:
             for e in ALL_ENGINES:
                 for height in 1, 2, 3:
+                    if f not in cant_be_doubled and height == 2:
+                        continue
                     for num_side_parts in 0, 2, 3, 4, 6:
                         if e != toroidal:
                             yield Stage(f, e, True, num_side_parts, 1, height)
