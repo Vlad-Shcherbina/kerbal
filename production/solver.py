@@ -38,7 +38,8 @@ if __name__ == '__main__':
             for i, (ar, stages) in enumerate(d.items()):
                 if depth == 3:
                     print 100 * i / len(d), '%'
-                for stages2 in find_takeoff(depth, ar, required_dv):
+                stages2 = find_takeoff(depth, ar, required_dv)
+                if stages2 != None:
                     update_best(stages + stages2)
     except KeyboardInterrupt as e:
         traceback.print_exc()

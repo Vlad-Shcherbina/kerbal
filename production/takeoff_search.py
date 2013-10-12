@@ -1,60 +1,55 @@
 from simulator import *
 
-max_mass = max(
-    stage.engine.thrust*stage.num_engines/MIN_TAKEOFF_ACCEL - stage.m_start()
-    for stage in Stage.all())
 
-print max_mass
+def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10):
 
+    def filter_allowed_stages(ar, allowed_stages):
+        simple_ar = ar._replace(can_mount_sides=True, need_large_decoupler=False)
+        filtered_allowed_stages = []
+        for stage in allowed_stages:
+            try:
+                new_ar, accel = simple_ar.try_mount(stage, atmosphere=False)
+            except MountFailure:
+                continue
+            if accel >= MIN_TAKEOFF_ACCEL:
+                filtered_allowed_stages.append(stage)
+        return filtered_allowed_stages
 
-def find_takeoff(max_depth, ar, required_dv, allowed_stages=None):
     if allowed_stages is None:
         allowed_stages = Stage.all()
 
-    simple_ar = ar._replace(can_mount_sides=True, need_large_decoupler=False)
-    filtered_allowed_stages = []
-    for stage in allowed_stages:
-        try:
-            new_ar, accel = simple_ar.try_mount(stage, atmosphere=False)
-        except MountFailure:
-            continue
-        if accel >= MIN_TAKEOFF_ACCEL:
-            filtered_allowed_stages.append(stage)
+    best_mass = [1e10]
+    best_stages = [None]
 
-    allowed_stages = filtered_allowed_stages
-    #if ar.num_stages <= 2:
-    #    print ' * ' * ar.num_stages, len(allowed_stages)
+    def rec(max_depth, prev_stages, ar, allowed_stages):
+        allowed_stages = filter_allowed_stages(ar, allowed_stages)
 
-    for stage in allowed_stages:
-        try:
-            new_ar, accel = ar.try_mount(stage, atmosphere=True)
-        except MountFailure:
-            continue
+        for stage in allowed_stages:
+            try:
+                new_ar, accel = ar.try_mount(stage, atmosphere=True)
+            except MountFailure:
+                continue
 
-        if accel >= MIN_TAKEOFF_ACCEL and new_ar.dv >= required_dv:
-            yield [stage]
+            if accel >= MIN_TAKEOFF_ACCEL and new_ar.dv >= required_dv:
+                if new_ar.mass < best_mass[0]:
+                    best_mass[0] = new_ar.mass
+                    best_stages[0] = prev_stages + [stage]
 
-    if max_depth <= 1:
-        return
+        if max_depth <= 1:
+            return
+        for stage in allowed_stages:
+            try:
+                new_ar, accel = ar.try_mount(stage, atmosphere=False)
+            except MountFailure as e:
+                continue
 
-    for stage in allowed_stages:
-        #if ar.num_stages <= 2:
-        #    print ' * ' * ar.num_stages
-        try:
-            new_ar, accel = ar.try_mount(stage, atmosphere=False)
-        except MountFailure as e:
-            continue
+            if accel < MIN_TAKEOFF_ACCEL:
+                continue
 
-        if accel < MIN_TAKEOFF_ACCEL:
-            continue
+            rec(max_depth-1, prev_stages + [stage], new_ar, allowed_stages)
 
-        if new_ar.mass > max_mass + 1e-6:
-            #print 'mass cut'
-            continue
-
-        for stages in find_takeoff(max_depth-1, new_ar, required_dv, allowed_stages):
-            yield [stage] + stages
-
+    rec(max_depth, [], ar, allowed_stages)
+    return best_stages[0]
 
 
 if __name__ == '__main__':
@@ -82,8 +77,4 @@ if __name__ == '__main__':
     for ar, stages in d.items():
         cnt = 0
         print 'looking for takeoff for', ar
-        for s in find_takeoff(2, ar, required_dv):
-            #print stages + s
-            cnt += 1
-
-        print cnt, 'total'
+        print find_takeoff(2, ar, required_dv)
