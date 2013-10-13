@@ -2,6 +2,9 @@ import random
 
 from simulator import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def pareto_filter(d, better):
     ars = list(d)
@@ -46,7 +49,7 @@ def prepair_deep_space_solutions(payload, required_dv):
     d = {ar: []}
 
     for num_stages in range(1, MAX_STAGES+1):
-        print '*', num_stages
+        logger.info('Stage {}'.format(num_stages))
         cnt = 0
         for ar, stages in d.items():
             if ar.num_stages == num_stages - 1:
@@ -60,14 +63,16 @@ def prepair_deep_space_solutions(payload, required_dv):
                         d[ar2] = stages + [stage]
         if cnt == 0:
             break
-        print len(d)
+        logger.info('{} points'.format(len(d)))
         d = recursive_pareto_filter(d, ar_better)
-        print len(d)
+        logger.info('{} pareto-optimal points'.format(len(d)))
 
     return d
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+
     d = prepair_deep_space_solutions(10.4, 7000)
 
     import matplotlib.pyplot as plt
