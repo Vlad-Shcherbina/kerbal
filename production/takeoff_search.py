@@ -4,7 +4,7 @@ from pareto import pareto_filter
 
 efficient_engines = {}
 for stage in Stage.all():
-    gisp = stage.engine.isp_vac * G
+    gisp = stage.engine.isp_vac * G * stage.m_fuel() / stage.m_start()
     max_mass = stage.num_engines * stage.engine.thrust / MIN_TAKEOFF_ACCEL
     efficient_engines[max_mass, gisp] = None
 
@@ -16,7 +16,6 @@ efficient_engines = sorted(efficient_engines)
 #for m, gisp in sorted(efficient_engines):
 #    print m, gisp
 #exit()
-
 
 def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10):
 
@@ -38,6 +37,8 @@ def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10)
     best_mass = [max_mass]
     best_stages = [None]
 
+    allowed_stages = filter_allowed_stages(ar, allowed_stages)
+
     def rec(max_depth, prev_stages, ar, allowed_stages):
         if ar.mass >= best_mass[0]:
             return
@@ -54,7 +55,8 @@ def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10)
         if ar.dv + potential_dv < required_dv:
             return
 
-        allowed_stages = filter_allowed_stages(ar, allowed_stages)
+        if max_depth >= 2:
+            allowed_stages = filter_allowed_stages(ar, allowed_stages)
 
         for stage in allowed_stages:
             try:
