@@ -3,17 +3,7 @@ import random
 from simulator import *
 
 
-def better(ar1, ar2):
-    return (
-        ar1.height <= ar2.height and
-        ar1.num_stages <= ar2.num_stages and
-        ar1.can_mount_sides >= ar2.can_mount_sides and
-        ar1.need_large_decoupler <= ar2.need_large_decoupler and
-        ar1.dv >= ar2.dv and
-        ar1.mass <= ar2.mass)
-
-
-def pareto_filter(d):
+def pareto_filter(d, better):
     ars = list(d)
     new_d = {}
     for i, ar in enumerate(ars):
@@ -25,9 +15,9 @@ def pareto_filter(d):
     return new_d
 
 
-def recursive_pareto_filter(d):
+def recursive_pareto_filter(d, better):
     if len(d) < 1000:
-        return pareto_filter(d)
+        return pareto_filter(d, better)
     d1 = {}
     d2 = {}
     for k, v in d.items():
@@ -35,10 +25,20 @@ def recursive_pareto_filter(d):
             d1[k] = v
         else:
             d2[k] = v
-    d1 = recursive_pareto_filter(d1)
-    d2 = recursive_pareto_filter(d2)
+    d1 = recursive_pareto_filter(d1, better)
+    d2 = recursive_pareto_filter(d2, better)
     d1.update(d2)
-    return pareto_filter(d1)
+    return pareto_filter(d1, better)
+
+
+def ar_better(ar1, ar2):
+    return (
+        ar1.height <= ar2.height and
+        ar1.num_stages <= ar2.num_stages and
+        ar1.can_mount_sides >= ar2.can_mount_sides and
+        ar1.need_large_decoupler <= ar2.need_large_decoupler and
+        ar1.dv >= ar2.dv and
+        ar1.mass <= ar2.mass)
 
 
 def prepair_deep_space_solutions(payload, required_dv):
@@ -62,7 +62,7 @@ def prepair_deep_space_solutions(payload, required_dv):
         if cnt == 0:
             break
         print len(d)
-        d = recursive_pareto_filter(d)
+        d = recursive_pareto_filter(d, ar_better)
         print len(d)
 
     return d
