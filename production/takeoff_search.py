@@ -18,10 +18,13 @@ def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10)
     if allowed_stages is None:
         allowed_stages = Stage.all()
 
-    best_mass = [1e10]
+    best_mass = [max_mass]
     best_stages = [None]
 
     def rec(max_depth, prev_stages, ar, allowed_stages):
+        if ar.mass >= best_mass[0]:
+            return
+
         allowed_stages = filter_allowed_stages(ar, allowed_stages)
 
         for stage in allowed_stages:
