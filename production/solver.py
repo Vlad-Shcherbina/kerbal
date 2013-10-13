@@ -3,6 +3,8 @@ import sys
 import traceback
 from timeit import default_timer
 import argparse
+import multiprocessing
+import signal
 
 from simulator import *
 from pareto import prepair_deep_space_solutions
@@ -29,6 +31,22 @@ class TimeLimit(Exception):
     pass
 
 
+# To avoid Ctrl-C problems.
+# See http://noswap.com/blog/python-multiprocessing-keyboardinterrupt
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+def f(best_mass, depth, (ar, stages)):
+    try:
+        return (
+            stages,
+            find_takeoff(depth, ar, required_dv, max_mass=best_mass))
+    except (KeyboardInterrupt, SystemExit):
+        print "Exiting..."
+        return stages, None
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
@@ -37,8 +55,11 @@ if __name__ == '__main__':
     parser.add_argument('payload', type=float)
     parser.add_argument('dv', type=float)
     parser.add_argument('--time_limit', type=float,
-                       default=110,
+                       default=115,
                        help='time limit in seconds')
+    parser.add_argument('--processes', type=int,
+                       default=2,
+                       help='')
 
     args = parser.parse_args()
 
@@ -51,17 +72,37 @@ if __name__ == '__main__':
 
     deep_space_solutions = sorted(d.items(), key=lambda (ar, _): -ar.dv)
 
+    pool = multiprocessing.Pool(args.processes, init_worker)
+    map = pool.map
+
     try:
-        for depth in range(3, 4+1):
-            for i, (ar, stages) in enumerate(deep_space_solutions):
-                if default_timer() > start + args.time_limit:
-                    raise TimeLimit()
-                if depth >= 3:
-                    logging.info('search for depth {}: {}%'.format(
-                        depth, 100 * i / len(d), '%'))
-                stages2 = find_takeoff(depth, ar, required_dv, max_mass=best_mass)
-                if stages2 != None:
-                    update_best(stages + stages2)
+        tasks = [(depth, q)
+            for depth in range(3, 4+1)
+            for q in deep_space_solutions]
+        tasks.reverse()
+        total_tasks = len(tasks)
+
+        results = []
+        prev_progress = -1
+        while tasks or results:
+            if default_timer() > start + args.time_limit:
+                raise TimeLimit()
+            while tasks and len(results) < args.processes:
+                depth, q = tasks.pop()
+                results.append(pool.apply_async(f, [best_mass, depth, q]))
+            for result in results:
+                try:
+                    stages, stages2 = result.get(timeout=0.01)
+                    results.remove(result)
+                    if stages2 != None:
+                        update_best(stages + stages2)
+                    progress = 100 * (total_tasks - len(results) - len(tasks)) // total_tasks
+                    if progress > prev_progress:
+                        logging.info("{}%".format(progress))
+                        prev_progress = progress
+                except multiprocessing.TimeoutError:
+                    pass
+
     except KeyboardInterrupt as e:
         traceback.print_exc()
     except TimeLimit:
