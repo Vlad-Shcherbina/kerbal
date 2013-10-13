@@ -45,20 +45,19 @@ def prepair_deep_space_solutions(payload, required_dv):
     ar = AbstractRocket.make_payload(payload)
     d = {ar: []}
 
-    for num_stages in range(1, 10):
+    for num_stages in range(1, MAX_STAGES+1):
         print '*', num_stages
         cnt = 0
         for ar, stages in d.items():
             if ar.num_stages == num_stages - 1:
                 cnt += 1
                 for stage in Stage.all():
-                    stages2 = stages + [stage]
                     try:
-                        ar, _ = simulate(payload, stages2)
-                    except MountFailure:
+                        ar2, _ = ar.try_mount(stage, atmosphere=False)
+                    except MountFailure as e:
                         continue
-                    if ar.dv <= required_dv - TAKEOFF_DV:
-                        d[ar] = stages2
+                    if ar2.dv <= required_dv - TAKEOFF_DV:
+                        d[ar2] = stages + [stage]
         if cnt == 0:
             break
         print len(d)
