@@ -2,6 +2,7 @@ import json
 import sys
 import traceback
 from timeit import default_timer
+import argparse
 
 from simulator import *
 from pareto import prepair_deep_space_solutions
@@ -24,17 +25,25 @@ def update_best(stages):
         best_stages = stages[:]
 
 
+class TimeLimit(Exception):
+    pass
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 
-    try:
-        payload, required_dv = map(float, sys.argv[1:])
-    except:
-        print 'Usage:'
-        print '    solver.py <payload> <dv>'
-        print
-        raise
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('payload', type=float)
+    parser.add_argument('dv', type=float)
+    parser.add_argument('--time_limit', type=float,
+                       default=110,
+                       help='time limit in seconds')
+
+    args = parser.parse_args()
+
+    payload = args.payload
+    required_dv = args.dv
 
     start = default_timer()
 
@@ -45,6 +54,8 @@ if __name__ == '__main__':
     try:
         for depth in range(3, 4+1):
             for i, (ar, stages) in enumerate(deep_space_solutions):
+                if default_timer() > start + args.time_limit:
+                    raise TimeLimit()
                 if depth >= 3:
                     logging.info('search for depth {}: {}%'.format(
                         depth, 100 * i / len(d), '%'))
@@ -53,6 +64,8 @@ if __name__ == '__main__':
                     update_best(stages + stages2)
     except KeyboardInterrupt as e:
         traceback.print_exc()
+    except TimeLimit:
+        logging.warning('time limit')
 
     print '=' * 30
     print best_mass, best_dv
