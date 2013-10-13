@@ -1,4 +1,21 @@
 from simulator import *
+from pareto import pareto_filter
+
+
+efficient_engines = {}
+for stage in Stage.all():
+    gisp = stage.engine.isp_vac * G
+    max_mass = stage.num_engines * stage.engine.thrust / MIN_TAKEOFF_ACCEL
+    efficient_engines[max_mass, gisp] = None
+
+efficient_engines = pareto_filter(
+    efficient_engines,
+    lambda (m1, gisp1), (m2, gisp2): m1 >= m2 and gisp1 >= gisp2)
+
+efficient_engines = sorted(efficient_engines)
+#for m, gisp in sorted(efficient_engines):
+#    print m, gisp
+#exit()
 
 
 def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10):
@@ -23,6 +40,18 @@ def find_takeoff(max_depth, ar, required_dv, allowed_stages=None, max_mass=1e10)
 
     def rec(max_depth, prev_stages, ar, allowed_stages):
         if ar.mass >= best_mass[0]:
+            return
+
+        potential_dv = 0
+        prev_m = ar.mass
+        for m, gisp in efficient_engines:
+            if m < ar.mass:
+                continue
+            potential_dv += log(min(m, best_mass[0])/prev_m) * gisp
+            if m >= best_mass[0]:
+                break
+            prev_m = m
+        if ar.dv + potential_dv < required_dv:
             return
 
         allowed_stages = filter_allowed_stages(ar, allowed_stages)

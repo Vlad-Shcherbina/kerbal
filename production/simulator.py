@@ -35,6 +35,8 @@ MIN_ACCEL = 5.0 + 1e-6
 TAKEOFF_DV = 5000 + 1e-3
 MIN_TAKEOFF_ACCEL = 15.0 + 1e-6
 
+G = 9.816
+
 # sizes
 SMALL = 'Small'
 LARGE = 'Large'
@@ -134,9 +136,9 @@ class Stage(Stage):
 
     def gisp(self, atmosphere):
         if atmosphere:
-            return self.engine.isp_atm * 9.816
+            return self.engine.isp_atm * G
         else:
-            return self.engine.isp_vac * 9.816
+            return self.engine.isp_vac * G
 
 
 class MountFailure(Exception):
