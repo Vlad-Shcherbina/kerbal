@@ -31,9 +31,9 @@ from collections import namedtuple, OrderedDict
 
 MAX_HEIGHT = 7
 MAX_STAGES = 7
-MIN_ACCEL = 5.0 + 1e-6
-TAKEOFF_DV = 5000 + 1e-3
-MIN_TAKEOFF_ACCEL = 15.0 + 1e-6
+MIN_ACCEL = 5.0 + 1e-7
+TAKEOFF_DV = 5000 + 1e-6
+MIN_TAKEOFF_ACCEL = 15.0 + 1e-7
 
 G = 9.816
 

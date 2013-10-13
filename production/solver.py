@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('payload', type=float)
     parser.add_argument('dv', type=float)
     parser.add_argument('--time_limit', type=float,
-                       default=115,
+                       default=110,
                        help='time limit in seconds')
     parser.add_argument('--processes', type=int,
                        default=2,
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     try:
         tasks = [(depth, q)
-            for depth in range(3, 4+1)
+            for depth in range(3, 5+1)
             for q in deep_space_solutions]
         tasks.reverse()
         total_tasks = len(tasks)
