@@ -7,7 +7,7 @@ import multiprocessing
 import signal
 
 from simulator import *
-from pareto import prepair_deep_space_solutions
+from deep_space import prepair_deep_space_solutions
 from takeoff_search import find_takeoff
 
 import logging
