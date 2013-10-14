@@ -1,5 +1,5 @@
 from simulator import *
-from pareto import recursive_pareto_filter
+from pareto import pareto_frontier
 
 import logging
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def prepair_deep_space_solutions(payload, required_dv):
         if cnt == 0:
             break
         logger.info('{} points'.format(len(arq)))
-        frontier = recursive_pareto_filter(arq.keys())
+        frontier = pareto_frontier(arq.keys())
         frontier = set(frontier)
         arq = {k:v for k, v in arq.items() if k in frontier}
 

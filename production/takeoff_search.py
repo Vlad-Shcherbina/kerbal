@@ -1,5 +1,5 @@
 from simulator import *
-from pareto import pareto_filter
+from pareto import pareto_frontier
 
 
 efficient_engines = set()
@@ -9,7 +9,7 @@ for stage in Stage.all():
     #efficient_engines[max_mass, gisp] = None
     efficient_engines.add((-max_mass, -gisp))
 
-efficient_engines = pareto_filter(efficient_engines)
+efficient_engines = pareto_frontier(efficient_engines)
 efficient_engines = [(-m, -gisp) for m, gisp in efficient_engines]
 
 efficient_engines = sorted(efficient_engines)
