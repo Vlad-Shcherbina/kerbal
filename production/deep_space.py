@@ -5,24 +5,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def ar_better(ar1, ar2):
+# lower is better
+def ar_qualities(ar):
     return (
-        ar1.height <= ar2.height and
-        ar1.num_stages <= ar2.num_stages and
-        ar1.can_mount_sides >= ar2.can_mount_sides and
-        ar1.need_large_decoupler <= ar2.need_large_decoupler and
-        ar1.dv >= ar2.dv and
-        ar1.mass <= ar2.mass)
+        ar.height,
+        ar.num_stages,
+        -ar.can_mount_sides,
+        ar.need_large_decoupler,
+        -ar.dv,
+        ar.mass)
 
 
 def prepair_deep_space_solutions(payload, required_dv):
     ar = AbstractRocket.make_payload(payload)
-    d = {ar: []}
+
+    arq = {ar_qualities(ar): (ar, [])}
 
     for num_stages in range(1, MAX_STAGES+1):
         logger.info('Stage {}'.format(num_stages))
         cnt = 0
-        for ar, stages in d.items():
+        for ar, stages in arq.values():
             if ar.num_stages == num_stages - 1:
                 cnt += 1
                 for stage in Stage.all():
@@ -31,14 +33,17 @@ def prepair_deep_space_solutions(payload, required_dv):
                     except MountFailure as e:
                         continue
                     if ar2.dv <= required_dv - TAKEOFF_DV:
-                        d[ar2] = stages + [stage]
+                        arq[ar_qualities(ar2)] = ar2, stages + [stage]
         if cnt == 0:
             break
-        logger.info('{} points'.format(len(d)))
-        d = recursive_pareto_filter(d, ar_better)
-        logger.info('{} pareto-optimal points'.format(len(d)))
+        logger.info('{} points'.format(len(arq)))
+        frontier = recursive_pareto_filter(arq.keys())
+        frontier = set(frontier)
+        arq = {k:v for k, v in arq.items() if k in frontier}
 
-    return d
+        logger.info('{} pareto-optimal points'.format(len(arq)))
+
+    return arq.values()
 
 
 if __name__ == '__main__':
@@ -52,7 +57,7 @@ if __name__ == '__main__':
     for i in range(10):
         xs = []
         ys = []
-        for ar in d:
+        for ar, _ in d:
             if ar.num_stages == i:
                 xs.append(ar.mass)
                 ys.append(ar.dv)

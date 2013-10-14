@@ -3,29 +3,32 @@ import random
 from simulator import *
 
 
-def pareto_filter(d, better):
-    ars = list(d)
-    new_d = {}
-    for i, ar in enumerate(ars):
-        if any(better(ar2, ar) for ar2 in new_d):
+def pareto_filter(ds):
+    def better(xs, ys):
+        assert len(xs) == len(ys)
+        return all(x <= y for x, y in zip(xs, ys))
+    ds = list(ds)
+    assert len(ds) == len(set(ds))
+    new_ds = []
+    for i, a in enumerate(ds):
+        if any(better(b, a) for b in new_ds):
             continue
-        if any(better(ars[j], ar) for j in range(i+1, len(ars))):
+        if any(better(ds[j], a) for j in range(i+1, len(ds))):
             continue
-        new_d[ar] = d[ar]
-    return new_d
+        new_ds.append(a)
+    return new_ds
 
 
-def recursive_pareto_filter(d, better):
+def recursive_pareto_filter(d):
     if len(d) < 1000:
-        return pareto_filter(d, better)
-    d1 = {}
-    d2 = {}
-    for k, v in d.items():
+        return pareto_filter(d)
+    d1 = []
+    d2 = []
+    for a in d:
         if random.randrange(2) == 0:
-            d1[k] = v
+            d1.append(a)
         else:
-            d2[k] = v
-    d1 = recursive_pareto_filter(d1, better)
-    d2 = recursive_pareto_filter(d2, better)
-    d1.update(d2)
-    return pareto_filter(d1, better)
+            d2.append(a)
+    d1 = recursive_pareto_filter(d1)
+    d2 = recursive_pareto_filter(d2)
+    return pareto_filter(d1 + d2)

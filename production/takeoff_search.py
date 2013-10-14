@@ -2,15 +2,15 @@ from simulator import *
 from pareto import pareto_filter
 
 
-efficient_engines = {}
+efficient_engines = set()
 for stage in Stage.all():
     gisp = stage.engine.isp_vac * G * stage.m_fuel() / stage.m_start()
     max_mass = stage.num_engines * stage.engine.thrust / MIN_TAKEOFF_ACCEL
-    efficient_engines[max_mass, gisp] = None
+    #efficient_engines[max_mass, gisp] = None
+    efficient_engines.add((-max_mass, -gisp))
 
-efficient_engines = pareto_filter(
-    efficient_engines,
-    lambda (m1, gisp1), (m2, gisp2): m1 >= m2 and gisp1 >= gisp2)
+efficient_engines = pareto_filter(efficient_engines)
+efficient_engines = [(-m, -gisp) for m, gisp in efficient_engines]
 
 efficient_engines = sorted(efficient_engines)
 #for m, gisp in sorted(efficient_engines):

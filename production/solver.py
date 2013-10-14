@@ -68,9 +68,9 @@ if __name__ == '__main__':
 
     start = default_timer()
 
-    d = prepair_deep_space_solutions(payload, required_dv)
+    deep_space_solutions = prepair_deep_space_solutions(payload, required_dv)
 
-    deep_space_solutions = sorted(d.items(), key=lambda (ar, _): -ar.dv)
+    deep_space_solutions.sort(key=lambda (ar, _): -ar.dv)
 
     pool = multiprocessing.Pool(args.processes, init_worker)
     map = pool.map
