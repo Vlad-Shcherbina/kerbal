@@ -147,17 +147,17 @@ class MountFailure(Exception):
 
 AbstractRocket = namedtuple(
     'AbstractRocket',
-    'num_stages height can_mount_sides need_large_decoupler dv mass')
+    'num_stages height can_mount_sides need_large_decoupler dv mass takeoff_dv')
 class AbstractRocket(AbstractRocket):
     @staticmethod
     def make_payload(payload):
-        return AbstractRocket(0, 0, False, None, 0, payload)
+        return AbstractRocket(0, 0, False, None, 0, payload, 0)
 
     def try_mount(self, stage, atmosphere=False):
         # return tuple (new_abstract_rocket, stage_accel) or raise MountFailure
 
-        num_stages, height, can_mount_sides, need_large_decoupler, dv, mass =\
-            self
+        (num_stages, height, can_mount_sides, need_large_decoupler,
+         dv, mass, takeoff_dv) = self
 
         num_stages += 1
         if num_stages > MAX_STAGES:
@@ -186,10 +186,17 @@ class AbstractRocket(AbstractRocket):
             raise MountFailure('acceleration is too low')
 
         m_end = mass - stage.m_fuel()
-        dv += log(mass / m_end) * stage.gisp(atmosphere)
+        ddv = log(mass / m_end) * stage.gisp(atmosphere)
+        dv += ddv
+
+        if accel >= MIN_TAKEOFF_ACCEL:
+            takeoff_dv += ddv
+        else:
+            takeoff_dv = 0
 
         new_abstract_rocket = AbstractRocket(
-            num_stages, height, can_mount_sides, need_large_decoupler, dv, mass)
+            num_stages, height, can_mount_sides, need_large_decoupler,
+            dv, mass, takeoff_dv)
 
         return new_abstract_rocket, accel
 

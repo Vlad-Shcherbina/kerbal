@@ -13,7 +13,8 @@ def ar_qualities(ar):
         -ar.can_mount_sides,
         ar.need_large_decoupler,
         -ar.dv,
-        ar.mass)
+        ar.mass,
+        -ar.takeoff_dv)
 
 
 def prepair_deep_space_solutions(payload, required_dv):
@@ -32,7 +33,7 @@ def prepair_deep_space_solutions(payload, required_dv):
                         ar2, _ = ar.try_mount(stage, atmosphere=False)
                     except MountFailure as e:
                         continue
-                    if ar2.dv <= required_dv - TAKEOFF_DV:
+                    if ar2.dv <= required_dv:
                         arq[ar_qualities(ar2)] = ar2, stages + [stage]
         if cnt == 0:
             break
@@ -49,7 +50,7 @@ def prepair_deep_space_solutions(payload, required_dv):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    d = prepair_deep_space_solutions(10.4, 9000)
+    d = prepair_deep_space_solutions(10.4, 2500)
     exit()
 
     import matplotlib.pyplot as plt
