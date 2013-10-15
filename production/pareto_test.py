@@ -14,6 +14,12 @@ def test_small():
     eq_(pareto_frontier([(2,), (1,)]), [(1,)])
 
 
+def test_key():
+    def key(x):
+        return x//10, x%10
+    eq_unordered(pareto_frontier([11, 20, 31, 04], key=key), [11, 20, 04])
+
+
 def test_random():
     def t(n, d, A):
         r = random.Random(42)

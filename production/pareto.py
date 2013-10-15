@@ -19,12 +19,15 @@ def naive_pareto_frontier(ds):
     return new_ds
 
 
-def pareto_frontier(ds):
-    assert all(isinstance(d, tuple) for d in ds)
-    ds = sorted(ds)
-    fs = []
+def pareto_frontier(ds, key=lambda d:d):
+    assert all(isinstance(key(d), tuple) for d in ds)
+    ds = sorted(ds, key=key)
+    frontier = []
+    result = []
     for d in ds:
-        if any(all(x <= y for x, y in zip(f, d)) for f in fs):
+        k = key(d)
+        if any(all(x <= y for x, y in zip(f, k)) for f in frontier):
             continue
-        fs.append(d)
-    return fs
+        frontier.append(k)
+        result.append(d)
+    return result
