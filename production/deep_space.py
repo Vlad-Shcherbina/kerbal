@@ -20,12 +20,12 @@ def ar_qualities(ar):
 def prepair_deep_space_solutions(payload, required_dv):
     ar = AbstractRocket.make_payload(payload)
 
-    arq = {ar_qualities(ar): (ar, [])}
+    designs = [(ar, [])]
 
     for num_stages in range(1, MAX_STAGES+1):
         logger.info('Stage {}'.format(num_stages))
         cnt = 0
-        for ar, stages in arq.values():
+        for ar, stages in designs[:]:
             if ar.num_stages == num_stages - 1:
                 cnt += 1
                 for stage in Stage.all():
@@ -34,17 +34,14 @@ def prepair_deep_space_solutions(payload, required_dv):
                     except MountFailure as e:
                         continue
                     if ar2.dv <= required_dv:
-                        arq[ar_qualities(ar2)] = ar2, stages + [stage]
+                        designs.append((ar2, stages + [stage]))
         if cnt == 0:
             break
-        logger.info('{} points'.format(len(arq)))
-        frontier = pareto_frontier(arq.keys())
-        frontier = set(frontier)
-        arq = {k:v for k, v in arq.items() if k in frontier}
+        logger.info('{} points'.format(len(designs)))
+        designs = pareto_frontier(designs, key=lambda (ar, _): ar_qualities(ar))
+        logger.info('{} pareto-optimal points'.format(len(designs)))
 
-        logger.info('{} pareto-optimal points'.format(len(arq)))
-
-    return arq.values()
+    return designs
 
 
 if __name__ == '__main__':
