@@ -1,4 +1,5 @@
 import random
+import multiprocessing
 
 from simulator import *
 
@@ -30,4 +31,47 @@ def pareto_frontier(ds, key=lambda d:d):
             continue
         frontier.append(k)
         result.append(d)
+    return result
+
+
+def pareto_shard_((ks, shard)):
+    def better(a, b):
+        return all(x <= y for x, y in zip(a, b))
+    result = []
+    for d in shard:
+        if not any(better(k, d) and k != d for k in ks):
+            result.append(d)
+    return result
+
+
+def parallel_pareto_frontier(ds, key=lambda d:d, pool=None):
+    keys = map(key, ds)
+    keys.sort(key=lambda k: k[::-1])
+
+    if pool is None:
+        pool = multiprocessing.Pool()
+    n = pool._processes
+    shards = [keys[i::n] for i in range(n)]
+
+    shards = pool.imap_unordered(pareto_frontier, shards)
+
+    result = []
+    for ks in pool.imap_unordered(pareto_frontier, shards):
+        result.extend(ks)
+
+    result = list(set(result))
+    shards = [(result, result[i::n]) for i in range(n)]
+    frontier = []
+    for r in pool.imap_unordered(pareto_shard_, shards):
+        frontier.extend(r)
+
+    frontier = set(frontier)
+    result = []
+    for d in ds:
+        if not frontier:
+            break
+        k = key(d)
+        if k in frontier:
+            frontier.remove(k)
+            result.append(d)
     return result

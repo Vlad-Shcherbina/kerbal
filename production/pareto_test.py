@@ -1,7 +1,7 @@
 from nose.tools import eq_
 import random
 
-from pareto import pareto_frontier, naive_pareto_frontier
+from pareto import pareto_frontier, naive_pareto_frontier, parallel_pareto_frontier
 
 
 def eq_unordered(a, b):
@@ -12,7 +12,9 @@ def check_pareto_frontier(ds, key=lambda d:d):
     """Run all implementations and compare results"""
     naive = naive_pareto_frontier(ds, key=key)
     result = pareto_frontier(ds, key=key)
+    parallel = parallel_pareto_frontier(ds, key=key)
     eq_unordered(map(key, naive), map(key, result))
+    eq_unordered(map(key, naive), map(key, parallel))
     return result
 
 

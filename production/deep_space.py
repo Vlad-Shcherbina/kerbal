@@ -1,5 +1,7 @@
+import multiprocessing
+
 from simulator import *
-from pareto import pareto_frontier
+from pareto import parallel_pareto_frontier
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,6 +20,7 @@ def ar_qualities(ar):
 
 
 def prepair_deep_space_solutions(payload, required_dv):
+    pool = multiprocessing.Pool()
     ar = AbstractRocket.make_payload(payload)
 
     designs = [(ar, [])]
@@ -39,7 +42,8 @@ def prepair_deep_space_solutions(payload, required_dv):
         if cnt == 0:
             break
         logger.info('{} points'.format(len(designs)))
-        designs = pareto_frontier(designs, key=lambda (ar, _): ar_qualities(ar))
+        designs = parallel_pareto_frontier(
+            designs, key=lambda (ar, _): ar_qualities(ar), pool=pool)
         logger.info('{} pareto-optimal points'.format(len(designs)))
 
     return designs
