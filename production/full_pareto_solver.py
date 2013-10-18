@@ -47,7 +47,7 @@ if __name__ == '__main__':
                             .format(ar2.mass, ar2.dv))
                         best_mass = ar2.mass
                         best_dv = ar2.dv
-                        best_stages = stages[:]
+                        best_stages = stages + [atm_stage]
     except KeyboardInterrupt as e:
         traceback.print_exc()
 
