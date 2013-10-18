@@ -98,7 +98,7 @@ class Stage(Stage):
         return Stage(f, e, central, num_side_parts, num_engines, height)
 
     @staticmethod
-    def all():
+    def _all():
         toroidal = ALL_ENGINES[2]
         assert toroidal.name.startswith('Toroidal')
 
@@ -122,6 +122,13 @@ class Stage(Stage):
                             yield Stage(
                                 f, e, False,
                                 num_side_parts, num_side_parts, height)
+    _cached_all = None
+    @staticmethod
+    def all():
+        if Stage._cached_all is None:
+            Stage._cached_all = list(Stage._all())
+        return Stage._cached_all
+
 
     def num_tanks(self):
         return self.height * (self.num_side_parts + int(self.central))
