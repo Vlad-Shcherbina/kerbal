@@ -3,20 +3,20 @@ import random
 from simulator import *
 
 
-def naive_pareto_frontier(ds):
-    def better(xs, ys):
-        assert len(xs) == len(ys)
-        return all(x <= y for x, y in zip(xs, ys))
+def naive_pareto_frontier(ds, key=lambda d:d):
+    def better(a, b):
+        ka = key(a)
+        kb = key(b)
+        assert len(kb) == len(kb)
+        return all(x <= y for x, y in zip(ka, kb))
+
     ds = list(ds)
-    assert len(ds) == len(set(ds))
-    new_ds = []
-    for i, a in enumerate(ds):
-        if any(better(b, a) for b in new_ds):
-            continue
-        if any(better(ds[j], a) for j in range(i+1, len(ds))):
-            continue
-        new_ds.append(a)
-    return new_ds
+    result = []
+    for d in ds:
+        result = [r for r in result if not better(d, r)]
+        if not any(better(r, d) for r in result):
+            result.append(d)
+    return result
 
 
 def pareto_frontier(ds, key=lambda d:d):
