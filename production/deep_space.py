@@ -26,6 +26,8 @@ def prepair_deep_space_solutions(payload, required_dv):
         logger.info('Stage {}'.format(num_stages))
         cnt = 0
         for ar, stages in designs[:]:
+            if ar.dv > required_dv:
+                continue
             if ar.num_stages == num_stages - 1:
                 cnt += 1
                 for stage in Stage.all():
@@ -33,8 +35,7 @@ def prepair_deep_space_solutions(payload, required_dv):
                         ar2, _ = ar.try_mount(stage, atmosphere=False)
                     except MountFailure as e:
                         continue
-                    if ar2.dv <= required_dv:
-                        designs.append((ar2, stages + [stage]))
+                    designs.append((ar2, stages + [stage]))
         if cnt == 0:
             break
         logger.info('{} points'.format(len(designs)))
